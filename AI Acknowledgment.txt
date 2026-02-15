@@ -1,0 +1,25 @@
+AI Acknowledgment
+
+I acknowledge that I have consulted AI tools, specifically ChatGPT, to better understand and implement the JWKS server project requirements. The AI provided guidance on:
+
+Setting up FastAPI endpoints (/auth and /jwks)
+
+Handling RSA key generation, key expiry, and Base64URL encoding for JWKS
+
+Implementing JWT issuance, including expired tokens
+
+Ensuring proper HTTP methods and status codes for endpoints
+
+All code submitted in this project, including the structure of endpoints, logic for key management, and JWT handling, was written and implemented by me, based on my understanding of the assignment and the instructions provided. AI assistance was only used to clarify concepts and provide general coding guidance.
+
+Instructions provided for the project were followed, including:
+
+Implementing RSA key pair generation with kid and expiry timestamps
+
+Serving a RESTful JWKS endpoint that only returns unexpired keys
+
+Implementing a /auth endpoint that issues valid and expired JWTs based on a query parameter
+
+Ensuring proper HTTP methods and response status codes
+
+Maintaining clear and organized code with comments and tests for coverage
