@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from key_manager import KeyManager, int_to_base64
 from auth import create_jwt
 from cryptography.hazmat.primitives import serialization
+import uvicorn
 
 app = FastAPI()
 key_manager = KeyManager()
@@ -34,5 +35,15 @@ def auth(expired: bool = Query(False)):
 
     key_data = key_manager.get_latest_key(expired=expired)
     token = create_jwt(key_data["private_key"], key_data["kid"], expired=expired)
-    
+
     return {"access_token": token, "token_type": "bearer"}
+
+
+if __name__ == "__main__":
+    host = "127.0.0.1"
+    port = 8080
+    try:
+        print(f"Starting server at http://{host}:{port}")
+        uvicorn.run("main:app", host=host, port=port, reload=True)
+    except KeyboardInterrupt:
+        print("Server stopped by user")
