@@ -30,12 +30,9 @@ def get_jwks():
 
 @app.post("/auth")
 def auth(expired: bool = Query(False)):
-    # Use latest key
-    key_list = key_manager.keys
-    if not key_list:
-        key_data = key_manager.generate_key()
-    else:
-        key_data = key_list[-1]
+    """Return a JWT, optionally signed with an expired key."""
 
+    key_data = key_manager.get_latest_key(expired=expired)
     token = create_jwt(key_data["private_key"], key_data["kid"], expired=expired)
+    
     return {"access_token": token, "token_type": "bearer"}
