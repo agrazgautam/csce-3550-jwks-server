@@ -1,68 +1,25 @@
-# app/key_manager.py
+# key_manager.py
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
-import time
-import uuid
 import base64
-
-def int_to_base64(value: int) -> str:
-    """Convert an integer to Base64URL string for JWKS."""
-    value_bytes = value.to_bytes((value.bit_length() + 7) // 8, 'big')
-    return base64.urlsafe_b64encode(value_bytes).rstrip(b'=').decode('utf-8')
-
 
 class KeyManager:
     def __init__(self):
-        self.keys = []
+        self.active_key = self.generate_key()
+        self.expired_key = self.generate_key()
 
-
-
-    def generate_key(self, expiry_seconds=3600):
-
-        """Generate RSA key pair with kid and expiry."""
-
-        private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048
-        )
-
-        kid = str(uuid.uuid4())
-        expiry = int(time.time()) + expiry_seconds
-
-        key_data = {
-            "kid": kid,
+    def generate_key(self):
+        """Generate RSA key pair and return dict with private/public key and kid."""
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        numbers = private_key.private_numbers()
+        return {
             "private_key": private_key,
             "public_key": private_key.public_key(),
-            "expiry": expiry
+            "numbers": numbers,
+            "kid": "goodKID"  # will overwrite for expired if needed
         }
 
-        self.keys.append(key_data)
-        return key_data
-
-
-
-    def get_active_keys(self):
-
-        """Return all unexpired keys."""
-
-        now = int(time.time())
-        return [k for k in self.keys if k["expiry"] > now]
-
-
-
-    def get_key_by_kid(self, kid):
-        # Return key matching given kid.
-        for key in self.keys:
-            if key["kid"] == kid:
-                return key
-        return None
-
-
-    def get_latest_key(self, expired=False):
-        """Return latest key. If expired=True, return latest expired key if any."""
-        now = int(time.time())
-        if expired:
-            expired_keys = [k for k in self.keys if k["expiry"] <= now]
-            if expired_keys:
-                return expired_keys[-1]
-        return self.keys[-1] if self.keys else self.generate_key()
+    @staticmethod
+    def int_to_base64(value):
+        value_bytes = value.to_bytes((value.bit_length() + 7) // 8, 'big')
+        return base64.urlsafe_b64encode(value_bytes).rstrip(b'=').decode('utf-8')
