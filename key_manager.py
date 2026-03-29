@@ -3,6 +3,13 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 import time
 import uuid
+import base64
+
+def int_to_base64(value: int) -> str:
+    """Convert an integer to Base64URL string for JWKS."""
+    value_bytes = value.to_bytes((value.bit_length() + 7) // 8, 'big')
+    return base64.urlsafe_b64encode(value_bytes).rstrip(b'=').decode('utf-8')
+
 
 class KeyManager:
     def __init__(self):
