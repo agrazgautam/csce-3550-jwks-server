@@ -15,6 +15,8 @@ class KeyManager:
     def __init__(self):
         self.keys = []
 
+
+
     def generate_key(self, expiry_seconds=3600):
 
         """Generate RSA key pair with kid and expiry."""
@@ -23,16 +25,21 @@ class KeyManager:
             public_exponent=65537,
             key_size=2048
         )
+
         kid = str(uuid.uuid4())
         expiry = int(time.time()) + expiry_seconds
+
         key_data = {
             "kid": kid,
             "private_key": private_key,
             "public_key": private_key.public_key(),
             "expiry": expiry
         }
+
         self.keys.append(key_data)
         return key_data
+
+
 
     def get_active_keys(self):
 
@@ -41,8 +48,21 @@ class KeyManager:
         now = int(time.time())
         return [k for k in self.keys if k["expiry"] > now]
 
+
+
     def get_key_by_kid(self, kid):
+        # Return key matching given kid.
         for key in self.keys:
             if key["kid"] == kid:
                 return key
         return None
+
+
+    def get_latest_key(self, expired=False):
+        """Return latest key. If expired=True, return latest expired key if any."""
+        now = int(time.time())
+        if expired:
+            expired_keys = [k for k in self.keys if k["expiry"] <= now]
+            if expired_keys:
+                return expired_keys[-1]
+        return self.keys[-1] if self.keys else self.generate_key()
