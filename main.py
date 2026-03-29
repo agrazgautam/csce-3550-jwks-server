@@ -1,7 +1,7 @@
 # app/main.py
 from fastapi import FastAPI, Query
 from fastapi.responses import JSONResponse
-from key_manager import KeyManager
+from key_manager import KeyManager, int_to_base64
 from auth import create_jwt
 from cryptography.hazmat.primitives import serialization
 
@@ -21,12 +21,12 @@ def get_jwks():
                 "kid": key["kid"],
                 "use": "sig",
                 "alg": "RS256",
-                "n": key["public_key"].public_numbers().n,
-                "e": key["public_key"].public_numbers().e
+                "n": int_to_base64(key["public_key"].public_numbers().n),
+                "e": int_to_base64(key["public_key"].public_numbers().e)
             } for key in keys
         ]
     }
-    return JSONResponse(jwks)
+    return JSONResponse(content=jwks)
 
 @app.post("/auth")
 def auth(expired: bool = Query(False)):
