@@ -5,7 +5,7 @@ import datetime
 
 def create_jwt(private_key, kid, expired=False):
     """Create JWT with optional expired claim."""
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.UTC)
     exp = now - datetime.timedelta(hours=1) if expired else now + datetime.timedelta(hours=1)
 
     payload = {
