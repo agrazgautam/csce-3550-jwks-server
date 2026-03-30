@@ -9,8 +9,21 @@ DB_FILE = "totally_not_my_privateKeys.db"
 
 class KeyManager:
     def __init__(self):
+        self.conn = sqlite3.connect(DB_FILE)
+        self._create_table()
         self.active_key = self.generate_key()
         self.expired_key = self.generate_key()
+        
+
+    def _create_table(self):
+        with self.conn:
+            self.conn.execute("""
+                CREATE TABLE IF NOT EXISTS keys(
+                    kid INTEGER PRIMARY KEY AUTOINCREMENT,
+                    key BLOB NOT NULL,
+                    exp INTEGER NOT NULL
+                )
+            """)
 
     def generate_key(self):
         """Generate RSA key pair and return dict with private/public key and kid."""
