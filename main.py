@@ -11,10 +11,11 @@ from key_manager import KeyManager
 hostName = "127.0.0.1"
 serverPort = 8080
 
-# Initialize keys
 km = KeyManager()
 
+
 class MyServer(BaseHTTPRequestHandler):
+
     def _method_not_allowed(self):
         self.send_response(405)
         self.end_headers()
@@ -29,13 +30,48 @@ class MyServer(BaseHTTPRequestHandler):
         params = parse_qs(parsed_path.query)
 
         if parsed_path.path == "/auth":
+            now = int(time.time())
 
-            key = km.expired_key if 'expired' in params else km.active_key
-            token = create_jwt(key["private_key"], key["kid"], expired='expired' in params)
+            try:
+                if 'expired' in params:
+                    row = km.conn.execute(
+                        "SELECT kid, key FROM keys WHERE exp <= ? ORDER BY exp DESC LIMIT 1",
+                        (now,)
+                    ).fetchone()
+                else:
+                    row = km.conn.execute(
+                        "SELECT kid, key FROM keys WHERE exp > ? ORDER BY exp DESC LIMIT 1",
+                        (now,)
+                    ).fetchone()
 
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(token.encode("utf-8"))
+                if not row:
+                    self.send_response(500)
+                    self.end_headers()
+                    self.wfile.write(b"No key found")
+                    return
+
+                kid, key_pem = row
+
+                private_key = serialization.load_pem_private_key(
+                    key_pem,
+                    password=None
+                )
+
+                token = create_jwt(
+                    private_key,
+                    kid,
+                    expired=('expired' in params)
+                )
+
+                self.send_response(200)
+                self.send_header("Content-type", "text/plain")
+                self.end_headers()
+                self.wfile.write(token.encode())
+
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(f"Server error: {e}".encode())
 
             return
 
@@ -45,25 +81,43 @@ class MyServer(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/.well-known/jwks.json":
             now = int(time.time())
-            keys_rows = km.conn.execute("SELECT kid, key FROM keys WHERE exp > ?", (now,)).fetchall()
-            keys = {"keys": []}
 
-            for kid, key_pem in keys_rows:
-                private_key = serialization.load_pem_private_key(key_pem, password=None)
-                pub_numbers = private_key.public_key().public_numbers()
-                keys["keys"].append({
-                    "kty": "RSA",
-                    "use": "sig",
-                    "alg": "RS256",
-                    "kid": str(kid),
-                    "n": KeyManager.int_to_base64(pub_numbers.n),
-                    "e": KeyManager.int_to_base64(pub_numbers.e)
-                })
+            try:
+                rows = km.conn.execute(
+                    "SELECT kid, key FROM keys WHERE exp > ?",
+                    (now,)
+                ).fetchall()
 
-            self.send_response(200)
-            self.send_header("Content-type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(keys).encode("utf-8"))
+                keys = {"keys": []}
+
+                for kid, key_pem in rows:
+                    private_key = serialization.load_pem_private_key(
+                        key_pem,
+                        password=None
+                    )
+
+                    pub_numbers = private_key.public_key().public_numbers()
+
+                    keys["keys"].append({
+                        "kty": "RSA",
+                        "use": "sig",
+                        "alg": "RS256",
+                        "kid": str(kid),
+                        "n": KeyManager.int_to_base64(pub_numbers.n),
+                        "e": KeyManager.int_to_base64(pub_numbers.e)
+                    })
+
+                self.send_response(200)
+                self.send_header("Content-type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(keys).encode())
+
+
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(f"Server error: {e}".encode())
+
             return
 
         self._method_not_allowed()
@@ -71,10 +125,13 @@ class MyServer(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     webServer = HTTPServer((hostName, serverPort), MyServer)
+
     print(f"Starting server at http://{hostName}:{serverPort}")
+
     try:
         webServer.serve_forever()
     except KeyboardInterrupt:
-        print("Server stopped by user")
+        print("Server stopped")
+
     finally:
         webServer.server_close()
