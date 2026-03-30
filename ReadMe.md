@@ -95,6 +95,37 @@ Gradebot will:
 
 ---
 
+# Running Tests
+
+This project includes automated tests to verify JWT creation, database functionality, and server endpoints.
+
+## Run All Tests
+
+From the project root directory:
+
+```bash
+pytest
+```
+
+## Run Tests with Coverage
+To verify that the project meets the 80% coverage requirement, run:
+```bash
+pytest --cov=. --cov-report=term
+```
+
+## Generate HTML Coverage Report
+
+You can generate a detailed coverage report:
+```bash
+pytest --cov=. --cov-report=html
+```
+
+Then open:
+`htmlcov/index.html`
+
+
+---
+
 # Security Considerations
 
 This project prevents SQL injection by using **parameterized queries** when interacting with SQLite:
