@@ -123,6 +123,7 @@ class MyServer(BaseHTTPRequestHandler):
         self._method_not_allowed()
 
 
+# Main Function
 if __name__ == "__main__":
     webServer = HTTPServer((hostName, serverPort), MyServer)
 
