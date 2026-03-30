@@ -25,16 +25,20 @@ class KeyManager:
                 )
             """)
 
+
     def generate_key(self):
-        """Generate RSA key pair and return dict with private/public key and kid."""
+        
+        """Generate RSA private key and return PEM bytes."""
+
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        numbers = private_key.private_numbers()
-        return {
-            "private_key": private_key,
-            "public_key": private_key.public_key(),
-            "numbers": numbers,
-            "kid": "goodKID"  # will overwrite for expired if needed
-        }
+        pem = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.PKCS8,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+
+        return private_key, pem
+
 
     @staticmethod
     def int_to_base64(value):
