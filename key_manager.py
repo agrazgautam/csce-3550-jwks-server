@@ -3,6 +3,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 import base64
 import sqlite3
+import time
 
 DB_FILE = "totally_not_my_privateKeys.db"
 
@@ -49,6 +50,31 @@ class KeyManager:
             )
             return self.conn.execute("SELECT last_insert_rowid()").fetchone()[0]
         
+
+
+    def get_or_create_key(self, expired=False):
+        now = int(time.time())
+        if expired:
+            key_row = self.conn.execute(
+                "SELECT kid, key, exp FROM keys WHERE exp <= ? ORDER BY exp DESC LIMIT 1",
+                (now,)
+            ).fetchone()
+            exp_time = now - 3600  # expired 1 hour ago
+        else:
+            key_row = self.conn.execute(
+                "SELECT kid, key, exp FROM keys WHERE exp > ? ORDER BY exp DESC LIMIT 1",
+                (now,)
+            ).fetchone()
+            exp_time = now + 3600  # valid for 1 hour
+
+        if key_row:
+            kid, key_pem, exp_db = key_row
+            private_key = serialization.load_pem_private_key(key_pem, password=None)
+            return {"private_key": private_key, "pem": key_pem, "kid": kid, "exp": exp_db}
+        else:
+            private_key, pem = self.generate_key()
+            kid = self.save_key_to_db(pem, exp_time)
+            return {"private_key": private_key, "pem": pem, "kid": kid, "exp": exp_time}
 
 
     @staticmethod
