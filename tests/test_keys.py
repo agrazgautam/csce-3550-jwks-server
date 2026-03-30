@@ -43,3 +43,28 @@ def test_generate_key():
     # PEM should be bytes and contain header
     assert isinstance(pem, bytes)
     assert b"BEGIN PRIVATE KEY" in pem
+
+
+def test_save_key_to_db():
+    """Test saving a key to the database."""
+    km = KeyManager()
+
+    # Generate a key
+    private_key, pem = km.generate_key()
+
+    exp_time = 9999999999
+
+    kid = km.save_key_to_db(pem, exp_time)
+
+    # Ensure kid returned
+    assert isinstance(kid, int)
+
+    # Verify it exists in DB
+    row = km.conn.execute(
+        "SELECT kid, key, exp FROM keys WHERE kid = ?",
+        (kid,)
+    ).fetchone()
+
+    assert row is not None
+    assert row[0] == kid
+    assert row[2] == exp_time
