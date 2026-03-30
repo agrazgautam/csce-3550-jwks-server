@@ -2,6 +2,10 @@
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 import base64
+import sqlite3
+
+DB_FILE = "totally_not_my_privateKeys.db"
+
 
 class KeyManager:
     def __init__(self):
