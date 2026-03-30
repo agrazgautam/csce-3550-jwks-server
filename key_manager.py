@@ -27,7 +27,7 @@ class KeyManager:
 
 
     def generate_key(self):
-        
+
         """Generate RSA private key and return PEM bytes."""
 
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
@@ -38,6 +38,17 @@ class KeyManager:
         )
 
         return private_key, pem
+    
+
+    def save_key_to_db(self, pem, exp):
+        # Save key to database
+        with self.conn:
+            self.conn.execute(
+                "INSERT INTO keys (key, exp) VALUES (?, ?)",
+                (pem, int(exp))
+            )
+            return self.conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+        
 
 
     @staticmethod
