@@ -58,3 +58,10 @@ def test_invalid_method():
 
     assert r.status_code == 405
 
+
+def test_invalid_route():
+    import requests
+
+    r = requests.get("http://127.0.0.1:8080/invalid")
+
+    assert r.status_code == 405
