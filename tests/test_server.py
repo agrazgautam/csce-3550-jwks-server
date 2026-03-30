@@ -48,3 +48,13 @@ def test_jwks_endpoint():
     assert "kid" in key
     assert "n" in key
     assert "e" in key
+
+
+def test_invalid_method():
+    import requests
+
+    # PUT request
+    r = requests.put("http://127.0.0.1:8080/auth")
+
+    assert r.status_code == 405
+
