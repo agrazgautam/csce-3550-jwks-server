@@ -1,2 +1,5 @@
 cryptography
 pyjwt
+pytest
+pytest-cov
+requests
