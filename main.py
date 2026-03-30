@@ -28,14 +28,14 @@ class MyServer(BaseHTTPRequestHandler):
         params = parse_qs(parsed_path.query)
 
         if parsed_path.path == "/auth":
-            if 'expired' in params:
-                token = create_jwt(km.expired_key["private_key"], km.expired_key["kid"], expired=True)
-            else:
-                token = create_jwt(km.active_key["private_key"], km.active_key["kid"], expired=False)
+
+            key = km.expired_key if 'expired' in params else km.active_key
+            token = create_jwt(key["private_key"], key["kid"], expired='expired' in params)
 
             self.send_response(200)
             self.end_headers()
             self.wfile.write(token.encode("utf-8"))
+            
             return
 
         self._method_not_allowed()
