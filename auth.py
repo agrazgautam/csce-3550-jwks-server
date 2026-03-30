@@ -2,7 +2,8 @@
 import jwt
 import datetime
 
-def create_jwt(private_key_pem, kid, expired=False):
+
+def create_jwt(private_key, kid, expired=False):
     """Create JWT with optional expired claim."""
     now = datetime.datetime.utcnow()
     exp = now - datetime.timedelta(hours=1) if expired else now + datetime.timedelta(hours=1)
@@ -12,5 +13,11 @@ def create_jwt(private_key_pem, kid, expired=False):
         "exp": exp
     }
 
-    token = jwt.encode(payload, private_key_pem, algorithm="RS256", headers={"kid": kid})
+    token = jwt.encode(
+        payload,
+        private_key,
+        algorithm="RS256",
+        headers={"kid": str(kid)}
+    )
+
     return token
