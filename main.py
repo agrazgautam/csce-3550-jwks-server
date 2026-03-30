@@ -1,7 +1,9 @@
 # main.py
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from cryptography.hazmat.primitives import serialization
 from urllib.parse import urlparse, parse_qs
 import json
+import time
 
 from auth import create_jwt
 from key_manager import KeyManager
@@ -11,7 +13,6 @@ serverPort = 8080
 
 # Initialize keys
 km = KeyManager()
-km.expired_key["kid"] = "expiredKID"
 
 class MyServer(BaseHTTPRequestHandler):
     def _method_not_allowed(self):
@@ -35,25 +36,30 @@ class MyServer(BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             self.wfile.write(token.encode("utf-8"))
-            
+
             return
 
         self._method_not_allowed()
 
+
     def do_GET(self):
         if self.path == "/.well-known/jwks.json":
-            keys = {
-                "keys": [
-                    {
-                        "kty": "RSA",
-                        "use": "sig",
-                        "alg": "RS256",
-                        "kid": km.active_key["kid"],
-                        "n": KeyManager.int_to_base64(km.active_key["numbers"].public_numbers.n),
-                        "e": KeyManager.int_to_base64(km.active_key["numbers"].public_numbers.e)
-                    }
-                ]
-            }
+            now = int(time.time())
+            keys_rows = km.conn.execute("SELECT kid, key FROM keys WHERE exp > ?", (now,)).fetchall()
+            keys = {"keys": []}
+
+            for kid, key_pem in keys_rows:
+                private_key = serialization.load_pem_private_key(key_pem, password=None)
+                pub_numbers = private_key.public_key().public_numbers()
+                keys["keys"].append({
+                    "kty": "RSA",
+                    "use": "sig",
+                    "alg": "RS256",
+                    "kid": str(kid),
+                    "n": KeyManager.int_to_base64(pub_numbers.n),
+                    "e": KeyManager.int_to_base64(pub_numbers.e)
+                })
+
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
