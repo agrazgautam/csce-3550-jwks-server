@@ -3,3 +3,4 @@ pyjwt
 pytest
 pytest-cov
 requests
+python-dotenv
