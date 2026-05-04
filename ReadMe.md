@@ -2,7 +2,7 @@
 
 ## Project 2: Extending the JWKS server
 
-This project extends the basic JWKS server from Project 1 by adding **SQLite-backed storage** for private keys. Instead of generating keys only in memory, the server now persists RSA private keys in a SQLite database so they remain available even after the server restarts.
+This project extends Project 2 into Project 3, enhancing the JWKS server with improved security and user management. It adds AES encryption, user registration, authentication request logging, and a rate limiter to strengthen overall system security and control access.
 
 
 The database file used is:
@@ -82,16 +82,16 @@ The server will automatically:
 Ensure the server is **not already running**, then run:
 
 ```bash
-gradebot.exe project-2 --run="py main.py"
+gradebot.exe project-3 --run="py main.py"
 ```
 
 Gradebot will:
 
 1. Start the server
 2. Run automated tests
-3. Verify the JWKS endpoint
-4. Verify JWT generation
-5. Check expired key handling
+3. Verify the register endpoint
+4. Verify Private Keys encryption
+5. Create Auth Logs table
 
 ---
 
@@ -142,11 +142,35 @@ This ensures that user input cannot modify SQL statements.
 
 The SQLite table structure:
 
+Keys
 ```sql
 CREATE TABLE IF NOT EXISTS keys(
     kid INTEGER PRIMARY KEY AUTOINCREMENT,
     key BLOB NOT NULL,
     exp INTEGER NOT NULL
+);
+```
+
+Users
+```sql
+CREATE TABLE IF NOT EXISTS users(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    email TEXT UNIQUE,
+    date_registered TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login TIMESTAMP
+);
+```
+
+Auth Logs
+```sql
+    CREATE TABLE IF NOT EXISTS auth_logs(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        request_ip TEXT NOT NULL,
+        request_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        user_id INTEGER,
+        FOREIGN KEY(user_id) REFERENCES users(id)
 );
 ```
 
