@@ -35,7 +35,7 @@ def test_generate_key():
     assert isinstance(pem, bytes)
     assert b"BEGIN PRIVATE KEY" in pem
 
-
+# Database storage
 def test_save_key_to_db():
     km = KeyManager(":memory:")
     _, pem = km.generate_key()
